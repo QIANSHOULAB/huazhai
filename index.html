@@ -51,7 +51,7 @@
 [hidden]{display:none!important}
 html,body{background:var(--bg);color:var(--fg)}
 body{font-family:var(--font-ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
   padding-block:14px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{min-width:0}
@@ -60,7 +60,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:2px;border-radius:10px;background:var(--fill);flex:none}
 .seg button{appearance:none;border:0;background:transparent;color:var(--fg);font:500 14px/1 var(--font-ui);padding:8px 16px;border-radius:8px;cursor:pointer;transition:background .2s,box-shadow .2s}
 .seg button[aria-pressed="true"]{background:var(--seg-on);box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04);font-weight:600}
-.stage{position:relative;width:min(100%,calc(62vh * 3 / 4));width:min(100%,calc(62svh * 3 / 4));max-width:100%;aspect-ratio:3/4;margin:0 auto;border-radius:14px;overflow:hidden;background:var(--stage);
+.stage{position:relative;width:min(100%,calc(57vh * 3 / 4));width:min(100%,calc(57svh * 3 / 4));max-width:100%;aspect-ratio:3/4;margin:0 auto;border-radius:14px;overflow:hidden;background:var(--stage);
   box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 40px rgba(0,0,0,.20)}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
 .stage canvas:active{cursor:grabbing}
@@ -74,6 +74,17 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ghost svg{width:14px;height:14px}
 .ghost:disabled{opacity:.4;cursor:default}
 .filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:4px 2px 2px}
+.amount{display:flex;align-items:center;gap:12px;padding:0 2px;min-height:36px}
+.amount label{flex:none;font:500 13px/1 var(--font-ui);color:var(--muted)}
+.amount input{flex:1;min-width:0;height:32px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;--p:100%}
+.amount input:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
+.amount input::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--gold) 0 var(--p),var(--fill) var(--p) 100%)}
+.amount input::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-11px;border-radius:50%;background:#fff;border:0;
+  box-shadow:0 .5px 4px rgba(0,0,0,.12),0 6px 13px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06)}
+.amount input::-moz-range-track{height:4px;border-radius:2px;background:var(--fill)}
+.amount input::-moz-range-progress{height:4px;border-radius:2px;background:var(--gold)}
+.amount input::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 .5px 4px rgba(0,0,0,.12),0 6px 13px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06)}
+.amt-val{appearance:none;border:0;background:none;padding:6px 0;min-width:44px;text-align:right;color:var(--fg);font:600 13px/1 var(--font-ui);font-variant-numeric:tabular-nums;cursor:pointer}
 .f{appearance:none;border:0;background:none;padding:0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--fg);font:500 12px/1 var(--font-ui);cursor:pointer;white-space:nowrap}
 .f canvas{display:block;width:100%;max-width:64px;height:auto;aspect-ratio:1/1;border-radius:13px;background:var(--stage);box-shadow:0 0 0 .5px var(--hair);transition:box-shadow .2s}
 .f[aria-pressed="true"] canvas{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
@@ -129,6 +140,12 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   </div>
 
   <div class="filters" id="filters" role="group" aria-label="滤镜"></div>
+
+  <div class="amount">
+    <label for="amount">浓度</label>
+    <input type="range" id="amount" min="0" max="100" step="1" value="100" aria-describedby="amountVal">
+    <button class="amt-val" id="amountVal" type="button" title="点一下回到 100%">100%</button>
+  </div>
 
   <p class="foot">千手院 · QIANSHOU LAB</p>
 
@@ -285,8 +302,9 @@ const filterById = id => FILTERS.find(f => f.id === id) || FILTERS[0];
    ============================================================ */
 const $ = id => document.getElementById(id);
 const cv = $('poster'), cx = ctx2d(cv);
-const state = { photos: [], example: true, layout: 'two', filter: 'heijin' };
+const state = { photos: [], example: true, layout: 'two', filter: 'heijin', amount: 1 };
 try { const f = localStorage.getItem('hz.filter'); if (f && FILTERS.some(z => z.id === f)) state.filter = f; } catch (e) {}
+try { const a = parseFloat(localStorage.getItem('hz.amount')); if (a >= 0 && a <= 1) state.amount = a; } catch (e) {}
 const TPL = {};
 const W = () => TPL[state.layout].w, H = () => TPL[state.layout].h;
 const slotsOf = k => TPL[k || state.layout].slots;
@@ -343,7 +361,7 @@ function drawEmpty(x, bw, bh){
   x.fillText('点这里加一道菜', cxp, cyp + s * .14);
 }
 function compose(){
-  const T = TPL[state.layout];
+  const T = TPL[state.layout]; if (!T) return;
   if (cv.width !== T.w || cv.height !== T.h){ cv.width = T.w; cv.height = T.h; }
   cx.globalCompositeOperation = 'source-over'; cx.globalAlpha = 1;
   cx.fillStyle = '#0b0907'; cx.fillRect(0, 0, T.w, T.h);
@@ -351,7 +369,9 @@ function compose(){
     const p = state.photos[i], [bx, by, bw, bh] = slot.box, o = ctx2d(slot.buf);
     o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, bw, bh);
     if (p && p.out){
-      const g = slotGeom(slot, p); o.drawImage(p.out, g.x - bx, g.y - by, g.w, g.h);
+      const g = slotGeom(slot, p), k = state.amount;
+      if (k < 1) o.drawImage(p.src, g.x - bx, g.y - by, g.w, g.h);
+      if (k > 0){ o.globalAlpha = k; o.drawImage(p.out, g.x - bx, g.y - by, g.w, g.h); o.globalAlpha = 1; }
       o.fillStyle = rad(o, bw / 2, bh / 2, Math.min(bw, bh) * .38, Math.max(bw, bh) * .75, [[0, 'rgba(8,6,4,0)'], [1, 'rgba(8,6,4,.32)']]); o.fillRect(0, 0, bw, bh);
     } else drawEmpty(o, bw, bh);
     o.globalCompositeOperation = 'destination-in'; o.drawImage(slot.mask, 0, 0); o.globalCompositeOperation = 'source-over';
@@ -432,6 +452,20 @@ async function thumbs(){
     const btn = $('f-' + f.id); if (btn){ const c = btn.querySelector('canvas'); ctx2d(c).drawImage(out, 0, 0); }
   }
 }
+/* ---------- strength: 0% = the photo as shot, 100% = full filter ---------- */
+function paintAmount(){
+  const v = Math.round(state.amount * 100), r = $('amount');
+  r.value = String(v); r.style.setProperty('--p', v + '%'); $('amountVal').textContent = v + '%';
+}
+function setAmount(v, save){
+  state.amount = clamp(v, 0, 1); paintAmount(); redraw();
+  if (save){ try { localStorage.setItem('hz.amount', String(state.amount)); } catch (e) {} }
+}
+$('amount').addEventListener('input', e => setAmount(e.target.value / 100, false));
+$('amount').addEventListener('change', e => setAmount(e.target.value / 100, true));
+$('amountVal').addEventListener('click', () => setAmount(1, true));
+paintAmount();
+
 function setFilter(id){
   state.filter = id; try { localStorage.setItem('hz.filter', id); } catch (e) {}
   for (const b of document.querySelectorAll('.f')) b.setAttribute('aria-pressed', String(b.dataset.id === id));
@@ -578,7 +612,7 @@ async function boot(){
   thumbs(); await refresh();
   window.HZ.ready = true;
 }
-window.HZ = { state, refresh, compose, setFilter, setLayout, applyLook, analyze, decode, FILTERS, mk, ctx2d, TPL, ready: false, idle: () => new Promise(r => { const t = () => (window.HZ.ready && $('busy').hidden) ? r() : setTimeout(t, 50); t(); }) };
+window.HZ = { state, refresh, compose, setFilter, setLayout, setAmount, applyLook, analyze, decode, FILTERS, mk, ctx2d, TPL, ready: false, idle: () => new Promise(r => { const t = () => (window.HZ.ready && $('busy').hidden) ? r() : setTimeout(t, 50); t(); }) };
 boot();
 </script>
 </body>
