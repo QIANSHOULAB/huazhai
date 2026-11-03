@@ -567,8 +567,9 @@ $('saveBtn').addEventListener('click', async () => {
 
 /* ---------- boot ---------- */
 async function boot(){
-  buildStrip(); syncUI();
+  buildStrip();
   await Promise.all(Object.entries(TEMPLATES).map(([k, d]) => buildTemplate(k, d)));
+  syncUI();
   if (EXAMPLES.length){
     const ex = [];
     for (const u of EXAMPLES){ try { ex.push(await decode(u)); } catch (e) {} }
